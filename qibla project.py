@@ -43,7 +43,69 @@ def draw_text(text, font, color, x, y):
     surface = font.render(text, True, color)
     screen.blit(surface, (x, y))
 
-# Main loop
+
+#Function to get the Lat,Long using an api
+def get_longitude_latitude():
+    try:
+        # Get public IP address
+        ip_response = requests.get('https://api.ipify.org?format=json')
+        ip_data = ip_response.json()
+        public_ip = ip_data['ip']
+
+        # Get geolocation data based on the public IP
+        geolocation_response = requests.get(f'https://ipinfo.io/{public_ip}/json')
+        geolocation_data = geolocation_response.json()
+
+        # latitude and longitude
+        latitude, longitude = geolocation_data['loc'].split(',')
+        return float(latitude), float(longitude)
+    except Exception as e:
+        raise ValueError(f"Error: {e}")
+
+if __name__ == "__main__":
+    try:
+        latitude, longitude = get_longitude_latitude()
+    except ValueError as ve:
+        print(ve)
+    compass_center = (window_size[0] // 2, window_size[1] // 2)
+    compass_radius = 150
+
+
+
+
+#Converting kaaba's coordinates into radians
+xm=math.radians(21.4225)        
+
+ym=math.radians(39.8262)
+
+
+#converting my coordinates to radians
+x=math.radians(latitude)
+
+y=math.radians(longitude)
+
+
+# Great Circle Bearing formula function
+def great_circle(xm,ym,x,y):        
+    delta_y = ym - y
+    delta_x = x
+
+    # Formula
+    angle_rad = math.atan2(math.sin(delta_y) * math.cos(xm),
+                           math.cos(x) * math.sin(xm) - math.sin(x) * math.cos(xm) * math.cos(delta_y))
+
+    # Convert the angle from radians to degrees
+    angle_deg = math.degrees(angle_rad)
+
+    # angle has to be positive as clockwise 
+    angle_deg = (angle_deg + 360) % 360
+
+    return angle_deg
+    
+angle=great_circle(xm,ym,x,y)
+
+
+#main loop
 def main():
     clock = pygame.time.Clock()
 
@@ -76,74 +138,27 @@ def main():
             draw_text(number, font, BLACK, x - 10, y + 5)
 
         # Draw the compass needle pointing to 43 degrees from true north
-        draw_needle(43)
+        draw_needle(angle)
 
         # Displays the angle
-        angle_text = "Qibla Angle: 43 degrees"
+        angle_text = f"Qibla Angle: {angle:.1f} degrees"
+
         draw_text(angle_text, font, BLACK, window_size[0] // 2 - 60, window_size[1] - 30)
 
         pygame.display.flip()
         clock.tick(60)
 
 
-
-def get_longitude_latitude():
-    try:
-        # Get public IP address
-        ip_response = requests.get('https://api.ipify.org?format=json')
-        ip_data = ip_response.json()
-        public_ip = ip_data['ip']
-
-        # Get geolocation data based on the public IP
-        geolocation_response = requests.get(f'https://ipinfo.io/{public_ip}/json')
-        geolocation_data = geolocation_response.json()
-
-        # latitude and longitude
-        latitude, longitude = geolocation_data['loc'].split(',')
-        return float(latitude), float(longitude)
-    except Exception as e:
-        raise ValueError(f"Error: {e}")
-
-if __name__ == "__main__":
-    try:
-        latitude, longitude = get_longitude_latitude()
-    except ValueError as ve:
-        print(ve)
-    compass_center = (window_size[0] // 2, window_size[1] // 2)
-    compass_radius = 150
+if __name__=="__main__":
     main()
 
 
 
-#Converting kaaba's coordinates into radians
-xm=math.radians(21.4225)        
-
-ym=math.radians(39.8262)
 
 
 
 
-#converting my coordinates to radians
-x=math.radians(latitude)       
-
-y=math.radians(longitude)
 
 
-# Great Circle Bearing formula function
-def great_circle(xm,ym,x,y):        
-    delta_y = ym - y
-    delta_x = x
 
-    # Formula
-    angle_rad = math.atan2(math.sin(delta_y) * math.cos(xm),
-                           math.cos(x) * math.sin(xm) - math.sin(x) * math.cos(xm) * math.cos(delta_y))
 
-    # Convert the angle from radians to degrees
-    angle_deg = math.degrees(angle_rad)
-
-    # angle has to be positive as clockwise 
-    angle_deg = (angle_deg + 360) % 360
-
-    return angle_deg
-    
-angle=great_circle(xm,ym,x,y)
